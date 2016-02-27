@@ -1,0 +1,7 @@
+click
+requests
+feedparser
+htmlparser
+urllib2
+lxml
+regex

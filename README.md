@@ -5,6 +5,9 @@ Scripts de extração de títulos de notícias, datas e tags/palavras-chave de r
 ## Fontes para extração:
 
 * Agência USP de Notícias
+`python2 agenusp_usponline.py extrai_agenusp`
+* USP Online
+`python2 agenusp_usponline.py extrai_usponline`
 * Canal Ciência IBICT
 * Ciência e Cultura
 * Ciência Hoje

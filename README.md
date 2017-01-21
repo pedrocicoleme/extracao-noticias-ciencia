@@ -23,5 +23,5 @@ sudo pip2 install -r requirements.txt
 
 python2 agenusp_usponline.py extrai_agenusp
 python2 agenusp_usponline.py extrai_usponline
-
+python2 jornal_da_ciencia.py extrai_jornal_da_ciencia
 ```

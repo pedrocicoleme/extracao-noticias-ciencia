@@ -2,36 +2,25 @@
 # -*- coding: utf-8 -*-
 
 import os
-import sys
 import time
-import datetime
 import csv
 import re
 import click
 import csv_utf8
 
-from pprint import pprint
-
 import requests
 
 from lxml import html
 
-import logging
-logger = logging.getLogger()
+import helpers
 
-# Setting up logger
-logger.setLevel(logging.INFO)
-ch = logging.StreamHandler(sys.stdout)
-ch.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-ch.setFormatter(formatter)
-logger.addHandler(ch)
 
-logging.getLogger('urllib3').setLevel(logging.WARNING)
+logger = helpers.get_logger()
 
-base_url = u'http://www.unesp.br'
 
 s = requests.Session()
+
+
 def r_get(url):
     k = 0
     while True:
@@ -48,13 +37,17 @@ def r_get(url):
             time.sleep(5)
 
             if k > 10:
-                logger.info(u'muitos erros ao acessa pagina "%s", saindo...' % url)
+                logger.info(
+                    u'muitos erros ao acessa pagina "%s", saindo...' % url)
                 return None
+
 
 def limpa(text):
     return re.sub(ur'[ ]{2,}', u' ', re.sub(ur'[\t\r\n]', u'', text)).strip()
 
+
 class Minas_faz_ciencia():
+
     def __init__(self):
         # tabela.append([edicao, titulo + ': ' + subtitulo, publicacao, link, tags])
         # tabela2.append([edicao, titulo, subtitulo, publicacao, link, tags])
@@ -103,7 +96,7 @@ class Minas_faz_ciencia():
 
     def extract_list_editions_new(self):
         path = 'minas_pdfs/'
-        
+
         #os.system('for file in ./minas_pdfs/*.pdf; do pdftotext -raw "$file" "$file.txt"; done')
 
         for file in os.listdir(path):
@@ -116,11 +109,12 @@ class Minas_faz_ciencia():
                     file_lines = fo.readlines()
 
                 paginas = ''.join(file_lines).split('\x0c')[:10]
-                
+
                 tem = False
                 for pagina in paginas:
                     if re.search(r'\xc3\x8d[\n]?N[\n]?D[\n]?I[\n]?C[\n]?E', pagina, re.IGNORECASE) != None:
-                        pagina = re.sub(r'\xc3\x8d[\n]?N[\n]?D[\n]?I[\n]?C[\n]?E\n', '', pagina, re.IGNORECASE)
+                        pagina = re.sub(
+                            r'\xc3\x8d[\n]?N[\n]?D[\n]?I[\n]?C[\n]?E\n', '', pagina, re.IGNORECASE)
                         tem = True
                         break
 
@@ -129,9 +123,9 @@ class Minas_faz_ciencia():
                         pagina = ''.join(fo.readlines())
 
                 print file + '\n'
-                #print pagina
+                # print pagina
                 self.extract_news_edition_new(file.split('.')[0], pagina)
-                
+
                 print u'********************************************************************************\n'
 
                 #raw_input("Press Enter to continue...")
@@ -144,7 +138,8 @@ class Minas_faz_ciencia():
         for noticia in noticias:
             linhas = noticia.split('\n')
 
-            linhas = [x for x in linhas if re.search(r'^[0-9]{1,}$', x.strip()) == None]
+            linhas = [x for x in linhas if re.search(
+                r'^[0-9]{1,}$', x.strip()) == None]
 
             if len(linhas) > 1:
                 l = 1
@@ -181,8 +176,10 @@ class Minas_faz_ciencia():
                 titulo = titulo.decode('utf-8').strip()
                 tags = tags.decode('utf-8')
 
-                self.tabela.append([edition, titulo, subtitulo, self.publicacao, link, tags])
-                self.tabela2.append([edition, titulo, self.publicacao, link, tags])
+                self.tabela.append(
+                    [edition, titulo, subtitulo, self.publicacao, link, tags])
+                self.tabela2.append(
+                    [edition, titulo, self.publicacao, link, tags])
 
     def extract_list_editions_old(self):
         url = u'http://revista.fapemig.br/outrasedicoes.php'
@@ -192,7 +189,8 @@ class Minas_faz_ciencia():
         r = r_get(url)
 
         if r is None:
-            logger.info(u'erro ao iniciar extração do minas faz ciencia, saindo...')
+            logger.info(
+                u'erro ao iniciar extração do minas faz ciencia, saindo...')
             return False
 
         tree = html.fromstring(r.content)
@@ -200,7 +198,8 @@ class Minas_faz_ciencia():
         for revista in tree.xpath(u'//div[@id="divText"]/table[1]//table[1]//a'):
             link = super_url + revista.get(u'href')
 
-            infos = revista.xpath(u'./ancestor::td[1]/ancestor::td[1]/following-sibling::td[1]')[0]
+            infos = revista.xpath(
+                u'./ancestor::td[1]/ancestor::td[1]/following-sibling::td[1]')[0]
 
             edicao = limpa(infos.xpath(u'./b')[0].text_content())
 
@@ -220,7 +219,8 @@ class Minas_faz_ciencia():
         r = r_get(url_reportagens)
 
         if r is None:
-            logger.info(u'erro ao iniciar extração do minas faz ciencia, saindo...')
+            logger.info(
+                u'erro ao iniciar extração do minas faz ciencia, saindo...')
             return False
 
         tree = html.fromstring(r.content)
@@ -229,17 +229,21 @@ class Minas_faz_ciencia():
         for reportagem in tree.xpath(u'//div[@id="divText"]//a'):
             titulo = limpa(reportagem.text_content())
             link = super_url + reportagem.get(u'href')
-            subtitulo = self.extract_news_old(super_url + reportagem.get(u'href'))
+            subtitulo = self.extract_news_old(
+                super_url + reportagem.get(u'href'))
             # print u'\n'
 
-            self.tabela.append([edition, titulo, subtitulo, self.publicacao, link, u''])
-            self.tabela2.append([edition, titulo + ': ' + subtitulo, self.publicacao, link, u''])
+            self.tabela.append([edition, titulo, subtitulo,
+                                self.publicacao, link, u''])
+            self.tabela2.append(
+                [edition, titulo + ': ' + subtitulo, self.publicacao, link, u''])
 
     def extract_news_old(self, url):
         r = r_get(url)
 
         if r is None:
-            logger.info(u'erro ao iniciar extração do minas faz ciencia, saindo...')
+            logger.info(
+                u'erro ao iniciar extração do minas faz ciencia, saindo...')
             return False
 
         tree = html.fromstring(r.content)
@@ -265,7 +269,8 @@ class Minas_faz_ciencia():
 
         if len(subtitulo) == 0:
             try:
-                j = tree.xpath(u'//div[@id="divText"]//em')[0].text_content().strip()
+                j = tree.xpath(
+                    u'//div[@id="divText"]//em')[0].text_content().strip()
 
                 if re.search(ur'^\(', j) == None:
                     subtitulo = j
@@ -277,17 +282,19 @@ class Minas_faz_ciencia():
     def extrai_salva(self):
         self.extract()
 
-        with open('%s-%s.csv' % (self.publicacao, time.strftime(u'%Y-%m-%d')), 'wb') as myfile:
+        with open('./data/%s-%s.csv' % (self.publicacao, time.strftime(u'%Y-%m-%d')), 'wb') as myfile:
             wr = csv_utf8.UnicodeWriter(myfile, quoting=csv.QUOTE_ALL)
             wr.writerows(self.tabela)
 
-        with open('%s-%s-ajustado.csv' % (self.publicacao, time.strftime(u'%Y-%m-%d')), 'wb') as myfile:
+        with open('./data/%s-%s-ajustado.csv' % (self.publicacao, time.strftime(u'%Y-%m-%d')), 'wb') as myfile:
             wr = csv_utf8.UnicodeWriter(myfile, quoting=csv.QUOTE_ALL)
             wr.writerows(self.tabela2)
+
 
 @click.group()
 def cli():
     pass
+
 
 @click.option('--inicio', help='Pagina de inicio', default=1)
 @cli.command()

@@ -125,13 +125,13 @@ def extrai_salva(nome, url, inicio):
 
     extract_rss(tabela, tabela2, nome, url, k=inicio)
 
-    with open('%s-%s.csv' % (
+    with open('./data/%s-%s.csv' % (
             nome, time.strftime(u'%Y-%m-%d')), 'wb') as myfile:
         wr = csv_utf8.UnicodeWriter(myfile, quoting=csv.QUOTE_ALL)
 
         wr.writerows(tabela2)
 
-    with open('%s-%s-ajustado.csv' % (
+    with open('./data/%s-%s-ajustado.csv' % (
             nome, time.strftime(u'%Y-%m-%d')), 'wb') as myfile:
         wr = csv_utf8.UnicodeWriter(myfile, quoting=csv.QUOTE_ALL)
 

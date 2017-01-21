@@ -15,7 +15,7 @@ Scripts de extração de títulos de notícias, datas e tags/palavras-chave de r
 * Minas Faz Ciência
 * ~~UnB Ciência~~
 * ~~Unesp Ciência~~
-* Unicamp JU
+* ~~Unicamp JU~~
 
 
 ```

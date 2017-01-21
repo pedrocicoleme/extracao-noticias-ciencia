@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
 import time
 import datetime
 import csv
@@ -14,21 +13,10 @@ import feedparser
 
 import HTMLParser
 
-import logging
-
-logger = logging.getLogger()
+import helpers
 
 
-# Setting up logger
-logger.setLevel(logging.INFO)
-logging.getLogger("requests").setLevel(logging.WARNING)
-logging.getLogger("urllib3").setLevel(logging.WARNING)
-ch = logging.StreamHandler(sys.stdout)
-ch.setLevel(logging.INFO)
-formatter = logging.Formatter(
-    '%(asctime)s %(name)s [%(levelname)s] %(message)s')
-ch.setFormatter(formatter)
-logger.addHandler(ch)
+logger = helpers.get_logger()
 
 
 def extract_rss(tabela, tabela2, nome, url, k=1):

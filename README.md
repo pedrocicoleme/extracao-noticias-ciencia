@@ -1,6 +1,6 @@
 # extracao-noticias-ciencia
 
-Scripts de extração de títulos de notícias, datas e tags/palavras-chave de revistas universitárias e portais de ciências. Desenvolvido há um ano, talvez sejam necessárias adaptações para o correto funcionamento das extrações.
+Scripts de extração de títulos de notícias, datas e tags/palavras-chave de revistas universitárias e portais de ciências. Desenvolvido em 2015, talvez sejam necessárias adaptações para o correto funcionamento das extrações.
 
 ## Fontes para extração:
 

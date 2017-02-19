@@ -27,7 +27,6 @@ def extrai_tudo():
 
     tabela, tabela2 = extrai_2015_2016(tabela, tabela2)
 
-
     return tabela, tabela2
 
 
@@ -64,6 +63,7 @@ def parse_edicao(link, tabela, tabela2):
 
     m = regex.search(ur'/(\d+)/', link)
 
+    edicao_num = int(m.group(1))
     edicao = u'Edição {}'.format(m.group(1))
 
     print edicao
@@ -84,7 +84,7 @@ def parse_edicao(link, tabela, tabela2):
         if unicode(res.url) == unicode(link_a):
             continue
 
-        info_news = parse_noticia(link_a)
+        info_news = parse_noticia(link_a, edicao_num in (674, 672, 646))
 
         if info_news is None:
             continue
@@ -102,7 +102,7 @@ def parse_edicao(link, tabela, tabela2):
     return tabela, tabela2
 
 
-def parse_noticia(link):
+def parse_noticia(link, use_text=False):
     link = link.replace(
         u'http://www8.labunicamp.hom.unicamp.br/unicamp-old/ju/',
         u'http://www.unicamp.br/unicamp/ju/')
@@ -111,7 +111,12 @@ def parse_noticia(link):
 
     res = requests.get(link, verify=False)
 
-    root = lxml.html.fromstring(res.content)
+    if use_text:
+        text = res.text
+    else:
+        text = res.content
+
+    root = lxml.html.fromstring(text)
 
     try:
         titulo = root.xpath(
@@ -149,6 +154,8 @@ def parse_noticia(link):
             ur'^(Cartas|Painel da semana|Teses|Painel da|Portal da|Livro da)',
             titulo):
         return None
+
+    print titulo
 
     subtitulo = regex.sub(ur'\s+', u' ', subtitulo, flags=regex.V1 | regex.I)
 

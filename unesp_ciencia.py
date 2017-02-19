@@ -2,15 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import time
-import csv
-import re
-import click
-import csv_utf8
 
+import HTMLParser
 import requests
-
-from lxml import html
-
+import feedparser
+import click
+import lxml.html
 
 import helpers
 
@@ -18,266 +15,133 @@ import helpers
 logger = helpers.get_logger()
 
 
-base_url = u'http://www.unesp.br'
+def extrai_unesp_ciencia():
+    tabela = []
+    tabela2 = []
 
+    url = (u'http://www.unespciencia.com.br/category/'
+           u'edicoes-anteriores/feed/?paged=')
 
-def r_get(url):
     k = 0
+    while k >= 0:
+        k += 1
 
-    while True:
         try:
-            r = requests.get(url)
+            res = requests.get(url + unicode(k), timeout=20)
 
-            if not r.text:
-                raise Exception(u'erro ao iniciar extração')
+            if res.status_code == requests.codes.not_found:
+                logger.info(u'unesp_ciencia - acabaram as paginas')
 
-            return r
-        except Exception:
-            logger.exception(u'erro ao acessar "%s"', url)
+                k = -1
 
-            k += 1
+                break
 
-            time.sleep(5)
-
-            if k > 10:
+            if res.status_code != requests.codes.ok:
                 logger.info(
-                    u'muitos erros ao acessa pagina "%s", saindo...', url)
+                    u'unesp_ciencia - erro ao pegar a pagina %s - %s',
+                    k, res.status_code)
 
-                return None
+                k -= 1
 
+                time.sleep(10)
 
-class Unesp_ciencia():
-
-    def __init__(self):
-        # tabela.append([edicao, titulo + ': ' + subtitulo, publicacao, link, tags])
-        # tabela2.append([edicao, titulo, subtitulo, publicacao, link, tags])
-
-        self.publicacao = u'Revista Unesp Ciência'
-
-        self.tabela = []
-        self.tabela2 = []
-
-    def extract(self):
-        url = u'http://www.unespciencia.com.br/category/edicoes-anteriores/'
-
-        r = requests.get(url)
-
-        if r is None:
-            logger.info(
-                u'erro ao iniciar extração da revista '
-                u'unesp ciência, saindo...')
-
-            return False
-
-        pagina = r.text
-        tree = html.fromstring(pagina)
-
-        anos = tree.xpath(
-            u'//td[@class="noticiaTEXTO"]'
-            u'//a[contains(@href, "/revista/edicoes")]')
-
-        for ano in anos:
-            print u'**************************************'
-            print u'%s' % ano.text_content().strip()
-            print u'**************************************'
-
-            self.extract_revistas(ano.get(u'href'))
-
-    def extract_revistas(self, url):
-        r = requests.get(base_url + url)
-
-        if r is None:
-            logger.info(
-                u'erro ao iniciar extração da revista '
-                u'unesp ciência, saindo...')
-
-            return False
-
-        pagina = r.text
-        tree = html.fromstring(pagina)
-
-        revistas = tree.xpath(u'//td[@class="noticiaTEXTO"]//td/a')
-
-        for revista in reversed(revistas):
-            revista_edicao = revista.xpath(u'./span/text()')[0].strip()
-            #revista_titulo = revista.xpath(u'./div[@class="title"]/text()')[0].strip()
-            revista_url = revista.get(u'href').strip()
-
-            logger.info(
-                u'%s \n %s \n==================================',
-                revista_edicao, revista_url)
-
-            self.extract_reportagens(revista_edicao, revista_url)
-
-            print u'\n'
-
-    def extract_reportagens(self, edicao, url):
-        # [edicao, titulo, subtitulo, publicacao, link, tags]
-        reps = []
-
-        r = r_get(base_url + url)
-
-        super_url = u'http://www.unesp.br'
-
-        if not r.text:
-            logger.info(
-                u'erro ao iniciar extração da revista fapesp, saindo...')
-
-            raise Exception(u'erro ao iniciar extração')
-
-        try:
-            pagina = r.text
-            tree = html.fromstring(pagina)
-
-            # primeiras reportagens
-            reportagens = tree.xpath(
-                u'//td[@class="noticiaTEXTO"]//td[@class="noticiaTEXTO"]')[0]
-
-            n = 0
-
-            for reportagem in reportagens.xpath(u'.//a'):
-                n += 1
-
-                try:
-                    # categoria
-                    try:
-                        categoria = [
-                            x.text_content().strip() for x
-                            in reportagem.itersiblings(preceding=True)
-                            if (x.tag == u'strong' or x.tag == u'b')][0]
-                    except:
-                        try:
-                            x = reportagem.getparent()
-
-                            if x.tag == u'b':
-                                categoria = u''.join(
-                                    x.xpath(u'./text()')).strip()
-
-                            if len(categoria) == 0:
-                                categoria = [
-                                    y.text_content().strip() for y
-                                    in x.itersiblings(preceding=True)
-                                    if (x.tag == u'strong'
-                                        or x.tag == u'b')][0]
-                        except:
-                            categoria = u''
-
-                    # titulo
-                    titulo = reportagem.xpath(
-                        u'.//span[@class="titulosessao"]')[0].text_content().strip()
-
-                    # link
-                    link = reportagem.get(u'href')
-
-                    # subtitulo
-                    subtitulo = u''.join(
-                        reportagem.xpath(u'./text()')).strip()
-
-                    if len(subtitulo) == 0:
-                        for x in reportagens.xpath(
-                                u'(.//a)[' + unicode(n) +
-                                u']/following-sibling::text()'):
-                            if len(x.strip()) > 0:
-                                subtitulo = x.strip()
-                                break
-
-                    if len(subtitulo) == 0:
-                        for x in reportagens.xpath(
-                                u'(.//a)[' + unicode(n) +
-                                u']/../following-sibling::text()'):
-                            if len(x.strip()) > 0:
-                                subtitulo = x.strip()
-                                break
-
-                except Exception as e:
-                    # logger.exception(u'erro na edição %s' % url)
-                    continue
-
-                # print u'\n'.join([categoria.strip(), titulo, super_url +
-                # link, re.sub(ur'[ ]{2,}', u' ', subtitulo.replace(u'\n',
-                # u''))]) + u'\n'
-
-                self.tabela.append([
-                    edicao, titulo,
-                    re.sub(
-                        ur'[ ]{2,}', u' ', subtitulo.replace(u'\n', u'')),
-                    self.publicacao, super_url + link, categoria.strip()])
-
-                self.tabela2.append([
-                    edicao,
-                    re.sub(
-                        ur'\: $', u'', titulo + u': ' + re.sub(
-                            ur'[ ]{2,}', u' ', subtitulo.replace(
-                                u'\n', u''))),
-                    self.publicacao, super_url + link, categoria.strip()])
-
-            # últimas reportagens
-            reportagens = tree.xpath(
-                u'//td[@class="noticiaTEXTO"]'
-                u'/p[not(contains(@class, "linhaINDICE"))]/a')
-
-            for reportagem in reportagens:
-                txts = []
-                tags = u''
-
-                try:
-                    titulo = reportagem.xpath(
-                        u'./span[@class="titulosessao"]')[0].text_content().strip()
-
-                    try:
-                        titulo += u' ' + reportagem.xpath(
-                            u'./strong')[0].text_content().strip()
-                    except Exception as e:
-                        pass
-
-                    subtitulo = u''.join(
-                        reportagem.xpath(u'./text()')).strip()
-
-                    link = reportagem.get(u'href').strip()
-
-                    # print u'\n'.join([titulo, super_url + link, subtitulo]) +
-                    # u'\n'
-
-                    txts = titulo.split(u':')
-
-                    if len(txts) > 1:
-                        if len(txts[1].strip()) > 0:
-                            tags = txts[0].strip()
-                            txts[0] = txts[1].strip()
-
-                    self.tabela.append([
-                        edicao, txts[0].strip(), subtitulo,
-                        self.publicacao, super_url + link, tags])
-
-                    self.tabela2.append([
-                        edicao, re.sub(
-                            ur'\: $', u'', txts[0].strip() +
-                            u': ' + subtitulo),
-                        self.publicacao, super_url + link, tags])
-                except Exception as e:
-                    pass
-
+                continue
         except Exception:
-            logger.exception(u'erro durante scraping...')
+            logger.exception(u'unesp_ciencia - erro ao pegar a pagina %s', k)
 
-        return True
+            k -= 1
 
-    def extrai_salva(self):
-        self.extract()
+            time.sleep(10)
 
-        with open('./data/%s-%s.csv' % (
-                self.publicacao, time.strftime(u'%Y-%m-%d')),
-                'wb') as myfile:
-            wr = csv_utf8.UnicodeWriter(myfile, quoting=csv.QUOTE_ALL)
+            continue
 
-            wr.writerows(self.tabela)
+        feed = feedparser.parse(res.text)
 
-        with open('./data/%s-%s-ajustado.csv' % (
-                self.publicacao, time.strftime(u'%Y-%m-%d')),
-                'wb') as myfile:
-            wr = csv_utf8.UnicodeWriter(myfile, quoting=csv.QUOTE_ALL)
+        if len(feed.entries) == 0:
+            logger.info(u'unesp_ciencia - acabaram as paginas')
 
-            wr.writerows(self.tabela2)
+            k = -1
+
+            break
+
+        edicao_num = None
+
+        for entry in feed.entries:
+            edicao_num = int(entry.title.strip().split(u' ', 1)[-1])
+
+            if edicao_num <= 60:
+                break
+
+            print edicao_num
+
+            html = entry.content[0][u'value']
+
+            tabela, tabela2 = get_news_from_edition(
+                html, entry.title.strip(), tabela, tabela2)
+
+            # raw_input()
+
+        if edicao_num < 60:
+            break
+
+        logger.info(u'unesp_ciencia - pagina %d', k)
+
+    return tabela, tabela2
+
+def get_news_from_edition(html, edicao, tabela, tabela2):
+    root = lxml.html.fromstring(html)
+
+    h = HTMLParser.HTMLParser()
+
+    ps = root.xpath(u'//p')
+
+    cat = None
+    for p in ps:
+        cat_c = p.xpath(u'./strong/text()')
+
+        if len(cat_c):
+            cat = cat_c[0].strip()
+
+        artigos = p.xpath(u'./a')
+
+        if not len(artigos):
+            artigos = p.xpath(u'./br')
+
+        for artigo in artigos:
+            titulo = artigo.text or artigo.tail
+
+            if isinstance(titulo, basestring):
+                titulo = titulo.split(u' – ', 1)[0].strip()
+            else:
+                continue
+
+            if not len(titulo) or \
+               titulo == u'revistaunespciencia@reitoria.unesp.br':
+                continue
+
+            link = artigo.get(u'href', '')
+
+            print cat
+            print titulo
+            print link
+            print u'--------------------------'
+
+            tabela.append([
+                edicao,
+                h.unescape(titulo),  # sem subtitulo no site
+                u'Unesp Ciência',
+                h.unescape(link),
+                h.unescape(cat)])
+
+            tabela2.append([
+                edicao,
+                h.unescape(cat),
+                h.unescape(titulo),
+                u'',
+                h.unescape(cat),
+                h.unescape(link)])
+
+    return tabela, tabela2
 
 
 @click.group()
@@ -285,12 +149,12 @@ def cli():
     pass
 
 
-@click.option('--inicio', help='Pagina de inicio', default=1)
 @cli.command()
-def extrai_unesp_ciencia(inicio):
-    unesp_ciencia = Unesp_ciencia()
+def extrai():
+    tabela, tabela2 = extrai_unesp_ciencia()
 
-    unesp_ciencia.extrai_salva()
+    helpers.salva_tabelas(u'unesp_ciencia', tabela, tabela2)
+
 
 if __name__ == '__main__':
     cli()

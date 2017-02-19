@@ -20,7 +20,8 @@ logger = helpers.get_logger()
 class Jornal_da_ciencia():
 
     def __init__(self):
-        # tabela.append([edicao, titulo + ': ' + subtitulo, publicacao, link, tags])
+        # tabela.append([edicao, titulo + ': ' + subtitulo,
+        #     publicacao, link, tags])
         # tabela2.append([edicao, titulo, subtitulo, publicacao, link, tags])
 
         self.publicacao = u'Jornal da Ciencia'
@@ -64,7 +65,9 @@ class Jornal_da_ciencia():
         n = 0
         m = 0
         for edicao in edicoes:
-            print u'***********************************\n' + edicao + u'\n***********************************\n'
+            print u'***********************************\n' + edicao + \
+                u'\n***********************************'
+
             r = requests.get(url + edicao)
 
             if not r.text:
@@ -81,37 +84,60 @@ class Jornal_da_ciencia():
             print edicao
 
             noticias = tree.xpath(
-                u'//div[@class="home-materia-edicao" or @class="materia-principal"]')
+                u'//div[@class="home-materia-edicao_" or '
+                u'@class="home-materia-edicao" or '
+                u'@class="materia-principal"]')
+
+            # print(noticias)
 
             for noticia in noticias:
                 categoria = u''
+                try:
+                    cat = noticia.xpath(u'./../p/text()')
+
+                    if not len(cat):
+                        cat = noticia.xpath(
+                            u'./../preceding-sibling::div/p/text()')
+
+                    if len(cat):
+                        categoria = cat[-1].strip()
+                except:
+                    pass
 
                 try:
                     link_c = noticia.xpath(
-                        u'.//div[@class="home-titulo-materia" or @class="titulo-principal"]//a')[0]
+                        u'.//div[@class="home-titulo-materia" or '
+                        u'@class="titulo-principal"]//a')[0]
+
                     titulo = regex.sub(
                         '^[0-9]{1,}\.\s', u'', link_c.text).strip()
+
                     link = link_c.get(u'href').strip()
 
                     try:
                         subtitulo = noticia.xpath(
-                            u'.//div[@class="home-texto-materia" or @class="resumo-principal"]//p/text()')[0].strip()
+                            u'.//div[@class="home-texto-materia" or '
+                            u'@class="resumo-principal"]//p/text()')[0].strip()
                     except:
                         subtitulo = u''
 
-                    # print edicao + u'\n' + titulo + u'\n' + subtitulo + u'\n'
-                    # + link + u'\n'
+                    # print u'\n'.join([edicao, titulo, subtitulo, link])
 
                     self.tabela.append(
-                        [edicao, titulo + u': ' + subtitulo, self.publicacao, link, categoria])
+                        [edicao, titulo, subtitulo, self.publicacao,
+                         link, categoria])
                     self.tabela2.append(
-                        [edicao, titulo, subtitulo, self.publicacao, link, categoria])
+                        [edicao, titulo + u': ' + subtitulo,
+                         self.publicacao, link, categoria])
 
                     n += 1
                 except:
                     pass
 
             m += 1
+
+            if int(edicao.split(',', 1)[0]) == 5183:
+                break
 
         logger.info(u'total de %d notícias em %d edições' % (n, m))
 

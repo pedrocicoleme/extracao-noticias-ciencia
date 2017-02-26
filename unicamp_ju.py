@@ -84,6 +84,9 @@ def parse_edicao(link, tabela, tabela2):
         if unicode(res.url) == unicode(link_a):
             continue
 
+        if unicode(link_a) in [u'http://www8.labunicamp.hom.unicamp.br/unicamp/ju/639']:
+            continue
+
         info_news = parse_noticia(link_a, edicao_num in (674, 672, 646))
 
         if info_news is None:
@@ -91,10 +94,13 @@ def parse_edicao(link, tabela, tabela2):
 
         titulo, subtitulo, link, cat = info_news
 
+        titulo_subtitulo = regex.sub(
+            ur': $', u'', titulo + u': ' + subtitulo.strip())
+
         tabela.append(
             [edicao, titulo, subtitulo, u'Jornal da Unicamp', link, cat])
         tabela2.append(
-            [edicao, titulo + u' - ' + subtitulo, u'Jornal da Unicamp',
+            [edicao, titulo_subtitulo, u'Jornal da Unicamp',
              link, cat])
 
     # raw_input()
@@ -139,6 +145,9 @@ def parse_noticia(link, use_text=False):
 
         if not len(titulo):
             titulo = bloco[0].xpath(u'./h2/img/@alt')
+
+        if not len(titulo):
+            titulo = [bloco[0].xpath(u'./h2')[0].text_content()]
 
         titulo = titulo[0].strip()
 

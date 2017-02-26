@@ -36,10 +36,10 @@ def salva_tabelas(nome, tabela, tabela2):
             nome, time.strftime(u'%Y-%m-%d')), 'wb') as myfile:
         wr = csv_utf8.UnicodeWriter(myfile, quoting=csv.QUOTE_ALL)
 
-        wr.writerows(tabela2)
+        wr.writerows(tabela)
 
     with open('./data/%s-%s-ajustado.csv' % (
             nome, time.strftime(u'%Y-%m-%d')), 'wb') as myfile:
         wr = csv_utf8.UnicodeWriter(myfile, quoting=csv.QUOTE_ALL)
 
-        wr.writerows(tabela)
+        wr.writerows(tabela2)

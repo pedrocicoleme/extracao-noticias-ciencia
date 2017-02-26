@@ -8,6 +8,7 @@ import subprocess
 import pickle
 
 import requests
+import regex
 import click
 import copy
 import pyperclip
@@ -49,11 +50,41 @@ class Jornal_da_ciencia_impresso():
             
             for edicao in edicoes:
                 link_c = edicao.xpath(u'.//div[@class="pdf-titulo"]/a')[0]
-                
+
                 print link_c.text
                 print link_c.get(u'href')
 
-                self.extract_from_edicao(link_c.text, link_c.get(u'href'))
+                res = self.extract_from_edicao(link_c.text, link_c.get(u'href'))
+
+                for res1 in res:
+                    self.tabela.append([
+                        res1['edicao'],
+                        res1['titulo'].strip(),
+                        res1.get(u'subtitulo', u'').strip(),
+                        u'Jornal da Ciência Impresso',
+                        res1[u'link'],
+                        res1.get(u'tags', u'')])
+
+                    title_and_sub = regex.sub(
+                            ur'\s+', u' ',
+                            res1['titulo'].strip() + u': ' + res1.get(u'subtitulo', u'').strip(),
+                            flags=regex.V1 | regex.I)
+
+                    title_and_sub = regex.sub(
+                        ur'(: $|- )',
+                        u'',
+                        title_and_sub,
+                        flags=regex.V1 | regex.I)
+                    
+                    self.tabela2.append([
+                        res1['edicao'],
+                        title_and_sub,
+                        u'Jornal da Ciência Impresso',
+                        res1[u'link'],
+                        regex.sub(
+                            ur'\s+', u' ',
+                            res1.get(u'tags', u''),
+                            flags=regex.V1 | regex.I)])
 
             if len(edicoes):
                 k += 1
@@ -69,10 +100,12 @@ class Jornal_da_ciencia_impresso():
                 filex.write(requests.get(link).content)
 
         if os.path.exists(filename + '.p'):
-            # res2 = pickle.load(open(filename + '.p', 'rb'))
+            res2 = pickle.load(open(filename + '.p', 'rb'))
 
-            # for res1 in res2:
-            #     print res1[u'titulo']
+            for res1 in res2:
+                res1[u'link'] = link
+
+            return res2
 
             # raw_input()
 
@@ -83,15 +116,18 @@ class Jornal_da_ciencia_impresso():
             stdout=open(os.devnull, 'w'), stderr=open(os.devnull, 'w'))
 
         global edicao
+        global link_e
         global res
         global semi_res
 
+        link_e = link
         edicao = titulo
         res = []
         semi_res = None
 
         def on_release(key):
             global edicao
+            global link_e
             global res
             global semi_res
 
@@ -106,7 +142,8 @@ class Jornal_da_ciencia_impresso():
 
                 semi_res = {
                     u'edicao': edicao,
-                    u'titulo': pyperclip.paste()}
+                    u'titulo': pyperclip.paste(),
+                    u'link': link_e}
 
             if key == u'w':
                 semi_res['subtitulo'] = pyperclip.paste()
@@ -127,8 +164,7 @@ class Jornal_da_ciencia_impresso():
         with open(filename + '.p', 'wb') as fpickle:
             pickle.dump(res, fpickle)
 
-        from pprint import pprint
-        pprint(res)
+        return res
 
     def extrai_salva(self):
         self.extract_edicoes()

@@ -271,7 +271,7 @@ def cli():
 
 @click.option('--inicio', help='Pagina de inicio', default=1)
 @cli.command()
-def extrai_ciencia_hoje(inicio):
+def extrai(inicio):
     ciencia_hoje = Ciencia_hoje()
     ciencia_hoje.extrai_salva()
 

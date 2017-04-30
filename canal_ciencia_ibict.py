@@ -126,7 +126,7 @@ def cli():
 
 @click.option('--inicio', help='Pagina de inicio', default=1)
 @cli.command()
-def extrai_canal_ciencia_ibict(inicio):
+def extrai(inicio):
     canal_ciencia_ibict = Canal_ciencia_ibict()
     canal_ciencia_ibict.extrai_salva()
 

@@ -4,7 +4,7 @@ Scripts de extração de títulos de notícias, datas e tags/palavras-chave de r
 
 ## Fontes para extração:
 
-*Agência USP de Notícias
+* Agência USP de Notícias
 * USP Online
 * Canal Ciência IBICT
 * Ciência e Cultura
